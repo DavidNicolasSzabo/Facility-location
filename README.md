@@ -11,3 +11,5 @@ Activate Circle: activates the circle functionality so you can move around the c
 Clear canvas: Clears the canvas and resets the informations.
 Set radius: Button to set a custom radius.
 Quit (right-down corner): quits the program.
+
+MAin.py is Manhattan distance program, while Main2.py is the Euclidean distance program.
