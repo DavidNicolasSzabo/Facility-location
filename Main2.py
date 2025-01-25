@@ -1,12 +1,12 @@
 import tkinter as tk
-from tkinter import simpledialog
-import math
+from tkinter import simpledialog, Canvas,Label,Scrollbar, Frame, RIGHT, Y, BOTH
 import random
 import time
 AvgTime= []
 points = []
 radius = 1
 max_points = 0
+insider_points = 0
 point_size = 2
 precomputed_centers = {}
 cursor_size = 1
@@ -17,25 +17,41 @@ def add_point(event):
 def activate_circle(event):
     x, y = event.x, event.y
     canvas.delete("circle")
-    global max_points, precomputed_centers, AvgTime
-    start_time = time.time()
+    canvas.delete("line")
+    global max_points, precomputed_centers, AvgTime,insider_points
+    points_in_radius = []
+    insider_points = 0
     count = 0
+    start_time = time.time()
     for px, py in points:
         dist = ((px - x) ** 2 + (py - y) ** 2) ** 0.5
         dist2 = ((x - px) ** 2 + (y - py) ** 2) ** 0.5
         if dist <= radius or dist2 <= radius:
             count = count + 1
+            points_in_radius.append((px, py))
+    insider_points = count
     if count > max_points:
         max_points = count
         precomputed_centers = {(x, y): count}
     elif count == max_points:
         precomputed_centers[(x, y)] = count
+    for px, py in points_in_radius:
+        canvas.create_line(x, y, px, py, fill="blue", tags="line", width=1)
+    coordinates_text = "\n""\n".join([f"({px}, {py})" for px, py in points_in_radius])
+    update_coordinates_label(coordinates_text)
     end_time = time.time()
     Runtime = end_time - start_time
     AvgTime.append(Runtime)
     color = "green" if (x,y) in precomputed_centers  else "red"
     canvas.create_oval(x - radius, y - radius, x + radius, y + radius, outline=color, tags="circle", width=2)
     max_points_label.config(text=f"Max Points: {max_points}")
+    inside_points_label.config(text=f"Inside circle Points: {insider_points}")
+def update_coordinates_label(coordinates_text):
+    canvas2.delete("all")
+    canvas2.create_window((0, 0), window=label_frame, anchor="nw")
+    coordinates_label.config(text=coordinates_text)
+    label_frame.update_idletasks()
+    canvas2.config(scrollregion=canvas2.bbox("all"))
 def generate_points():
     num_points = simpledialog.askinteger("Generate Points", "Enter the number of points to generate:")
     if num_points is not None and num_points > 0:
@@ -79,8 +95,10 @@ def activate_functionality(new_functionality):
 root = tk.Tk()
 root.title("Facility location")
 root.geometry("1280x720")
-canvas = tk.Canvas(root, width=1280, height=720, bg="black")
-canvas.pack()
+frame = Frame(root)
+frame.pack(side=tk.TOP, fill="both", expand=True)
+canvas = tk.Canvas(frame, width=1130, height=720, bg="black")
+canvas.pack(side=tk.LEFT,fill="y")
 control_frame = tk.Frame(root, bg="black")
 control_frame.pack(side=tk.BOTTOM, fill=tk.X)
 add_points_btn = tk.Button(control_frame, text="Add Points", command=lambda: activate_functionality("add_points"))
@@ -92,12 +110,24 @@ activate_circle_btn = tk.Button(control_frame, text="Activate Circle",
 activate_circle_btn.pack(side=tk.LEFT)
 clear_canvas_btn = tk.Button(control_frame, text="Clear Canvas", command=clear_canvas)
 clear_canvas_btn.pack(side=tk.LEFT)
+frame2=Frame(frame,width=20,height=720)
+frame2.pack(side=tk.RIGHT,fill="y")
+canvas2 = Canvas(frame2,bg="black")
+canvas2.pack(side="left", fill="both", expand=True)
+scrollbar = Scrollbar(frame2, orient="vertical", command=canvas2.yview)
+scrollbar.pack(side="right", fill="y")
+canvas2.configure(yscrollcommand=scrollbar.set)
+label_frame = Frame(canvas2, bg="black")
+coordinates_label = Label(label_frame, text="", anchor="nw", justify="left", width=10)
+coordinates_label.pack()
 radius_btn = tk.Button(control_frame, text="Set Radius", command=set_radius)
 radius_btn.pack(side=tk.LEFT)
 radius_label = tk.Label(control_frame, text="Radius: 0", bg="black", fg="white")
 radius_label.pack(side=tk.LEFT)
 max_points_label = tk.Label(control_frame, text="Max Points: 0", bg="black", fg="white")
 max_points_label.pack(side=tk.LEFT)
+inside_points_label = tk.Label(control_frame, text="Inside circle Points: 0", bg="black", fg="white")
+inside_points_label.pack(side=tk.LEFT)
 quit_btn = tk.Button(control_frame, text="Quit", command=quit_app)
 quit_btn.pack(side=tk.RIGHT)
 root.mainloop()
